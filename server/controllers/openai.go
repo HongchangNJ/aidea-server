@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	chat2 "github.com/mylxsw/aidea-server/pkg/ai/chat"
 	"github.com/mylxsw/aidea-server/pkg/ai/control"
 	openaiHelper "github.com/mylxsw/aidea-server/pkg/ai/openai"
@@ -15,11 +21,6 @@ import (
 	service2 "github.com/mylxsw/aidea-server/pkg/service"
 	"github.com/mylxsw/aidea-server/pkg/tencent"
 	"github.com/mylxsw/aidea-server/pkg/youdao"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -241,7 +242,9 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 
 	// 免费模型
 	// 获取当前用户剩余的智慧果数量，如果不足，则返回错误
-	leftCount, maxFreeCount := ctl.userSrv.FreeChatRequestCounts(ctx, user.ID, req.Model)
+	leftCount := 10000000
+	maxFreeCount := 100000000
+	//leftCount, maxFreeCount := ctl.userSrv.FreeChatRequestCounts(ctx, user.ID, req.Model)
 	if leftCount <= 0 {
 		quota, needCoins, err := ctl.queryChatQuota(ctx, quotaRepo, user, sw, webCtx, req, inputTokenCount, maxFreeCount)
 		if err != nil {
@@ -305,6 +308,7 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 	if errors.Is(err, ErrChatResponseHasSent) {
 		return
 	}
+	fmt.Printf("replayText: %s\n", replyText)
 
 	// 以下两种情况再次尝试
 	// 1. 聊天响应为空
@@ -349,31 +353,31 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 	}()
 
 	// 更新用户免费聊天次数
-	if replyText != "" {
-		func() {
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
+	// if replyText != "" {
+	// 	func() {
+	// 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// 		defer cancel()
 
-			if err := ctl.userSrv.UpdateFreeChatCount(ctx, user.ID, req.Model); err != nil {
-				log.WithFields(log.Fields{
-					"user_id": user.ID,
-					"model":   req.Model,
-				}).Errorf("update free chat count failed: %s", err)
-			}
-		}()
-	}
+	// 		if err := ctl.userSrv.UpdateFreeChatCount(ctx, user.ID, req.Model); err != nil {
+	// 			log.WithFields(log.Fields{
+	// 				"user_id": user.ID,
+	// 				"model":   req.Model,
+	// 			}).Errorf("update free chat count failed: %s", err)
+	// 		}
+	// 	}()
+	// }
 
-	// 扣除智慧果
-	if leftCount <= 0 && quotaConsumed > 0 {
-		func() {
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
+	// // 扣除智慧果
+	// if leftCount <= 0 && quotaConsumed > 0 {
+	// 	func() {
+	// 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// 		defer cancel()
 
-			if err := quotaRepo.QuotaConsume(ctx, user.ID, quotaConsumed, repo2.NewQuotaUsedMeta("chat", req.Model)); err != nil {
-				log.Errorf("used quota add failed: %s", err)
-			}
-		}()
-	}
+	// 		if err := quotaRepo.QuotaConsume(ctx, user.ID, quotaConsumed, repo2.NewQuotaUsedMeta("chat", req.Model)); err != nil {
+	// 			log.Errorf("used quota add failed: %s", err)
+	// 		}
+	// 	}()
+	// }
 }
 
 func (ctl *OpenAIController) handleChat(

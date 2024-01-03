@@ -3,14 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
+	"strings"
+
 	"github.com/mylxsw/aidea-server/pkg/ai/chat"
 	"github.com/mylxsw/aidea-server/pkg/misc"
 	"github.com/mylxsw/aidea-server/pkg/service"
 	"github.com/mylxsw/go-utils/ternary"
 	"github.com/redis/go-redis/v9"
-	"math/rand"
-	"net/http"
-	"strings"
 
 	"github.com/mylxsw/aidea-server/config"
 	"github.com/mylxsw/asteria/log"
@@ -167,15 +168,18 @@ func (ctl *InfoController) Capabilities(ctx context.Context, webCtx web.Context,
 		"home_models": homeModels,
 
 		// 首页路由地址
-		"home_route": "/chat-chat",
+		"home_route": "/",
 		// 是否禁用聊一聊
-		"disable_chat": false,
+		"disable_chat": true,
 		// 是否禁用数字人
 		"disable_digital_human": false,
 		// 是否禁用绘玩
-		"disable_gallery": false,
+		"disable_gallery": true,
 		// 是否禁用创作岛
 		"disable_creation_island": false,
+
+		// 是否禁用我的页面
+		"disable_mine_page": true,
 
 		// 是否显示首页模型描述
 		"show_home_model_description": strings.Contains(client.Language, "zh"),

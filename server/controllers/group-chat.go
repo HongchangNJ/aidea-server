@@ -4,19 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	chat2 "github.com/mylxsw/aidea-server/pkg/ai/chat"
-	repo2 "github.com/mylxsw/aidea-server/pkg/repo"
-	"github.com/mylxsw/aidea-server/pkg/repo/model"
-	"github.com/mylxsw/aidea-server/pkg/service"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	chat2 "github.com/mylxsw/aidea-server/pkg/ai/chat"
+	repo2 "github.com/mylxsw/aidea-server/pkg/repo"
+	"github.com/mylxsw/aidea-server/pkg/repo/model"
+	"github.com/mylxsw/aidea-server/pkg/service"
+
 	"github.com/mylxsw/aidea-server/config"
-	"github.com/mylxsw/aidea-server/internal/coins"
-	"github.com/mylxsw/aidea-server/server/controllers/common"
 	"github.com/mylxsw/asteria/log"
 
 	"github.com/mylxsw/aidea-server/internal/queue"
@@ -369,51 +368,51 @@ func (ctl *GroupChatController) Chat(ctx context.Context, webCtx web.Context, us
 
 	// 检查用户当前是否有足够的费用发起本次对话
 	membersMap := array.ToMap(grp.Members, func(mem model.ChatGroupMember, _ int) int64 { return mem.Id })
-	coinCounts := array.Map(availableMembers, func(memID int64, _ int) int64 {
-		leftCount, _ := ctl.userSrv.FreeChatRequestCounts(ctx, user.ID, membersMap[memID].ModelId)
-		if leftCount > 0 {
-			// 免费额度内
-			return 0
-		}
+	// coinCounts := array.Map(availableMembers, func(memID int64, _ int) int64 {
+	// 	leftCount, _ := ctl.userSrv.FreeChatRequestCounts(ctx, user.ID, membersMap[memID].ModelId)
+	// 	if leftCount > 0 {
+	// 		// 免费额度内
+	// 		return 0
+	// 	}
 
-		mpm := messagesPerMembers[memID]
+	// 	mpm := messagesPerMembers[memID]
 
-		count, err := chat2.MessageTokenCount(mpm.Messages, membersMap[memID].ModelId)
-		if err != nil {
-			log.F(log.M{"member_id": memID, "req": req}).Errorf("calc message token count failed: %v", err)
-			return coins.GetOpenAITextCoins(membersMap[memID].ModelId, 1000)
-		}
+	// 	count, err := chat2.MessageTokenCount(mpm.Messages, membersMap[memID].ModelId)
+	// 	if err != nil {
+	// 		log.F(log.M{"member_id": memID, "req": req}).Errorf("calc message token count failed: %v", err)
+	// 		return coins.GetOpenAITextCoins(membersMap[memID].ModelId, 1000)
+	// 	}
 
-		// 假设每次聊天消耗 3 个智慧果
-		mpm.NeedCoins = coins.GetOpenAITextCoins(membersMap[memID].ModelId, int64(count)) + 3
-		messagesPerMembers[memID] = mpm
+	// 	// 假设每次聊天消耗 3 个智慧果
+	// 	mpm.NeedCoins = coins.GetOpenAITextCoins(membersMap[memID].ModelId, int64(count)) + 3
+	// 	messagesPerMembers[memID] = mpm
 
-		return mpm.NeedCoins
-	})
+	// 	return mpm.NeedCoins
+	// })
 
-	needCoins := array.Reduce(coinCounts, func(carry, item int64) int64 { return carry + item }, 0)
-	quota, err := ctl.userSrv.UserQuota(ctx, user.ID)
-	if err != nil {
-		questionID := failedMessageWriter(fmt.Sprintf("查询用户剩余智慧果数量失败: %v", err))
-		log.F(log.M{
-			"req":         req,
-			"question_id": questionID,
-		}).Errorf("get user quota failed: %s", err)
-		return webCtx.JSONError("internal server error", http.StatusInternalServerError)
-	}
+	// needCoins := array.Reduce(coinCounts, func(carry, item int64) int64 { return carry + item }, 0)
+	// quota, err := ctl.userSrv.UserQuota(ctx, user.ID)
+	// if err != nil {
+	// 	questionID := failedMessageWriter(fmt.Sprintf("查询用户剩余智慧果数量失败: %v", err))
+	// 	log.F(log.M{
+	// 		"req":         req,
+	// 		"question_id": questionID,
+	// 	}).Errorf("get user quota failed: %s", err)
+	// 	return webCtx.JSONError("internal server error", http.StatusInternalServerError)
+	// }
 
-	// 获取当前用户剩余的智慧果数量，如果不足，则返回错误
-	restQuota := quota.Rest - quota.Freezed - needCoins
+	// // 获取当前用户剩余的智慧果数量，如果不足，则返回错误
+	// restQuota := quota.Rest - quota.Freezed - needCoins
 
-	log.F(log.M{
-		"need_coins":      needCoins,
-		"available_quota": quota.Rest - quota.Freezed,
-	}).Debugf("group chat consume estimate")
+	// log.F(log.M{
+	// 	"need_coins":      needCoins,
+	// 	"available_quota": quota.Rest - quota.Freezed,
+	// }).Debugf("group chat consume estimate")
 
-	if restQuota < 0 {
-		failedMessageWriter(fmt.Sprintf("智慧果数量不足，需要 %d 个智慧果，当前可用 %d 个", needCoins, quota.Rest-quota.Freezed))
-		return webCtx.JSONError(common.ErrQuotaNotEnough, http.StatusPaymentRequired)
-	}
+	// if restQuota < 0 {
+	// 	failedMessageWriter(fmt.Sprintf("智慧果数量不足，需要 %d 个智慧果，当前可用 %d 个", needCoins, quota.Rest-quota.Freezed))
+	// 	return webCtx.JSONError(common.ErrQuotaNotEnough, http.StatusPaymentRequired)
+	// }
 
 	// 记录用户提问问题
 	questionID, err := ctl.repo.ChatGroup.AddChatMessage(ctx, grp.Group.Id, user.ID, repo2.ChatGroupMessage{
@@ -427,9 +426,9 @@ func (ctl *GroupChatController) Chat(ctx context.Context, webCtx web.Context, us
 	}
 
 	// 冻结用户的智慧果
-	if err := ctl.userSrv.FreezeUserQuota(ctx, user.ID, needCoins); err != nil {
-		log.F(log.M{"user_id": user.ID, "quota": needCoins}).Errorf("群聊冻结用户智慧果失败: %s", err)
-	}
+	// if err := ctl.userSrv.FreezeUserQuota(ctx, user.ID, needCoins); err != nil {
+	// 	log.F(log.M{"user_id": user.ID, "quota": needCoins}).Errorf("群聊冻结用户智慧果失败: %s", err)
+	// }
 
 	// 为每一个成员创建聊天记录（待处理任务）
 	tasks := make([]GroupChatTask, 0)

@@ -7,7 +7,7 @@ listen: 0.0.0.0:8080
 #log-path: /data/logs/ai-server
 
 # 是否启用跨域支持
-enable-cors: false
+enable-cors: true
 
 # 是否启用迁移，启用后，当数据结构有更新时，会自动更新数据库
 enable-migrate: true
@@ -34,7 +34,7 @@ enable-model-rate-limit: false
 enable-custom-home-models: false
 
 # 数据库配置 (账号:密码@tcp(数据库地址:端口)/数据库名?charset=utf8mb4&parseTime=True&loc=Local)
-db-uri: "root:123456@tcp(localhost:3306)/aidea_server?charset=utf8mb4&parseTime=True&loc=Local"
+db-uri: "root:Jyauto@1220@tcp(localhost:3306)/aidea_server?charset=utf8mb4&parseTime=True&loc=Local"
 
 # Redis 配置
 redis-host: localhost
@@ -60,7 +60,7 @@ sms-channels: [ "aliyun", "tencent" ]
 ######## OpenAI 配置 ########
 
 # 是否启用 OpenAI
-enable-openai: true
+enable-openai: false
 
 # 是否启用 OpenAI 代理，依赖于 socks5-proxy 配置
 openai-autoproxy: false
@@ -141,37 +141,37 @@ googleai-key: ""
 # API 申请：https://cloud.baidu.com/product/wenxinworkshop
 
 # 是否启用百度文心大模型
-enable-baiduwxai: false
+enable-baiduwxai: true
 
-#baiduwx-key: ""
-#baiduwx-secret: ""
+baiduwx-key: "4ZBRw5Yxo8yLi8IX6NanLidG"
+baiduwx-secret: "nr4RVahf1BX5tddk5a8Yqbq4YGm3PAL5"
 
 ######### 阿里灵积模型 ########
 
 # API 申请：https://dashscope.aliyun.com/
 
 # 是否启用阿里云灵积模型平台
-enable-dashscopeai: false
-#dashscope-key: ""
+enable-dashscopeai: true
+dashscope-key: "sk-219623b2f54740699ff4ff9611aa06a5"
 #dashscope-keys: []
 
 ######### 讯飞星火大语言模型 ########
 
 # API 申请：https://xinghuo.xfyun.cn/
 # 是否启用讯飞星火模型
-enable-xfyunai: false
+enable-xfyunai: true
 
-#xfyun-appid: ""
-#xfyun-apikey: ""
-#xfyun-apisecret: ""
+xfyun-appid: "ff5402aa"
+xfyun-apikey: "be570a0eace09f807ed2ac6a18ef58c8"
+xfyun-apisecret: "Njg3YjVhNTI1YjNhZGQ2NmNjODk5MTQ5"
 
 ######## 商汤日日新 ########
 
 # API 申请：https://console.sensenova.cn/
 
-enable-sensenovaai: false
-sensenova-keyid: ""
-sensenova-keysecret: ""
+enable-sensenovaai: true
+sensenova-keyid: "2aAC0EGp2h6Y5zOWIdfjhbPW9Ui"
+sensenova-keysecret: "s0dh6GKp31KPjnpijtZn8pUlJ7EVVSQS"
 
 ######### 百川大模型 ########
 
