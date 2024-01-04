@@ -179,18 +179,43 @@ func (ctl *OpenAIController) audioTranscriptions(ctx context.Context, webCtx web
 }
 
 type FinalMessage struct {
-	Type          string `json:"type,omitempty"`
-	QuotaConsumed int64  `json:"quota_consumed,omitempty"`
-	Token         int64  `json:"token,omitempty"`
-	QuestionID    int64  `json:"question_id,omitempty"`
-	AnswerID      int64  `json:"answer_id,omitempty"`
-	Info          string `json:"info,omitempty"`
-	Error         string `json:"error,omitempty"`
+	Type                        string `json:"type,omitempty"`
+	QuotaConsumed               int64  `json:"quota_consumed,omitempty"`
+	Token                       int64  `json:"token,omitempty"`
+	QuestionID                  int64  `json:"question_id,omitempty"`
+	AnswerID                    int64  `json:"answer_id,omitempty"`
+	Info                        string `json:"info,omitempty"`
+	Error                       string `json:"error,omitempty"`
+	FirstLetterRespMicroseconds int64  `json:"first_letter_resp_microseconds,omitempty"`
+	TotalRespMicroseconds       int64  `json:"total_resp_microseconds,omitempty"`
 }
 
 func (m FinalMessage) ToJSON() string {
 	data, _ := json.Marshal(m)
 	return string(data)
+}
+
+type Statistics struct {
+	StartTime               time.Time
+	FirstLetterResponseTime time.Time
+	TotalResponseTime       time.Time
+	RetryTimes              int
+}
+
+func (stat *Statistics) FirstLetterResponseCost() int64 {
+	if stat.FirstLetterResponseTime.IsZero() {
+		return 0
+	}
+
+	return stat.FirstLetterResponseTime.Sub(stat.StartTime).Microseconds()
+}
+
+func (stat *Statistics) TotalResponseCost() int64 {
+	if stat.TotalResponseTime.IsZero() {
+		return 0
+	}
+
+	return stat.TotalResponseTime.Sub(stat.StartTime).Microseconds()
 }
 
 // Chat 聊天接口，接口参数参考 https://platform.openai.com/docs/api-reference/chat/create
@@ -280,6 +305,9 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 	var realTokenConsumed int
 	var quotaConsumed int64
 
+	// 写入用户消息
+	questionID := ctl.saveChatQuestion(ctx, user, req)
+
 	startTime := time.Now()
 	defer func() {
 		log.F(log.M{
@@ -297,11 +325,13 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 			)
 	}()
 
-	// 写入用户消息
-	questionID := ctl.saveChatQuestion(ctx, user, req)
+	stat := Statistics{
+		StartTime:  startTime,
+		RetryTimes: 0,
+	}
 
 	// 发起聊天请求并返回 SSE/WS 流
-	replyText, err := ctl.handleChat(ctx, req, user, sw, webCtx, questionID, 0)
+	replyText, err := ctl.handleChat(ctx, req, user, sw, webCtx, questionID, &stat)
 	if errors.Is(err, ErrChatResponseHasSent) {
 		return
 	}
@@ -314,7 +344,8 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 		if startTime.Add(60 * time.Second).After(time.Now()) {
 			log.F(log.M{"req": req, "user_id": user.ID}).Warningf("聊天响应为空，尝试再次请求，模型：%s", req.Model)
 
-			replyText, err = ctl.handleChat(ctx, req, user, sw, webCtx, questionID, 1)
+			stat.RetryTimes++
+			replyText, err = ctl.handleChat(ctx, req, user, sw, webCtx, questionID, &stat)
 			if errors.Is(err, ErrChatResponseHasSent) {
 				return
 			}
@@ -335,14 +366,14 @@ func (ctl *OpenAIController) Chat(ctx context.Context, webCtx web.Context, user 
 		defer cancel()
 
 		// 写入用户消息
-		answerID := ctl.saveChatAnswer(ctx, user, replyText, quotaConsumed, realTokenConsumed, req, questionID, chatErrorMessage)
+		answerID := ctl.saveChatAnswer(ctx, user, replyText, quotaConsumed, realTokenConsumed, req, questionID, chatErrorMessage, &stat)
 
 		if errors.Is(ErrChatResponseEmpty, err) {
 			misc.NoError(sw.WriteErrorStream(err, http.StatusInternalServerError))
 		} else {
 			if !ctl.apiMode {
 				// final 消息为定制消息，用于告诉 AIdea 客户端当前的资源消耗情况以及服务端信息
-				finalWord := ctl.buildFinalSystemMessage(questionID, answerID, user, quotaConsumed, realTokenConsumed, req, maxContextLen, chatErrorMessage)
+				finalWord := ctl.buildFinalSystemMessage(questionID, answerID, user, quotaConsumed, realTokenConsumed, req, maxContextLen, chatErrorMessage, &stat)
 				misc.NoError(sw.WriteStream(finalWord))
 			}
 		}
@@ -383,13 +414,17 @@ func (ctl *OpenAIController) handleChat(
 	sw *streamwriter.StreamWriter,
 	webCtx web.Context,
 	questionID int64,
-	retryTimes int,
+	stat *Statistics,
 ) (string, error) {
+	defer func() {
+		stat.TotalResponseTime = time.Now()
+	}()
+
 	chatCtx, cancel := context.WithTimeout(ctx, 180*time.Second)
 	defer cancel()
 
 	// 如果是重试请求，则优先使用备用模型
-	if retryTimes > 0 {
+	if stat.RetryTimes > 0 {
 		chatCtx = control.NewContext(chatCtx, &control.Control{PreferBackup: true})
 	}
 
@@ -404,13 +439,13 @@ func (ctl *OpenAIController) handleChat(
 			return "", ErrChatResponseHasSent
 		}
 
-		log.WithFields(log.Fields{"req": req, "user_id": user.ID, "retry_times": retryTimes}).Errorf("聊天请求失败，模型 %s: %v", req.Model, err)
+		log.WithFields(log.Fields{"req": req, "user_id": user.ID, "retry_times": stat.RetryTimes}).Errorf("聊天请求失败，模型 %s: %v", req.Model, err)
 
 		misc.NoError(sw.WriteErrorStream(errors.New(common.Text(webCtx, ctl.translater, common.ErrInternalError)), http.StatusInternalServerError))
 		return "", ErrChatResponseHasSent
 	}
 
-	replyText, err := ctl.writeChatResponse(ctx, req, stream, user, sw)
+	replyText, err := ctl.writeChatResponse(ctx, req, stream, user, sw, stat)
 	if err != nil {
 		return replyText, err
 	}
@@ -430,7 +465,7 @@ var (
 	ErrChatResponseGapTimeout = errors.New("两次响应之间等待时间过长，强制中断")
 )
 
-func (ctl *OpenAIController) writeChatResponse(ctx context.Context, req *chat2.Request, stream <-chan chat2.Response, user *auth.User, sw *streamwriter.StreamWriter) (string, error) {
+func (ctl *OpenAIController) writeChatResponse(ctx context.Context, req *chat2.Request, stream <-chan chat2.Response, user *auth.User, sw *streamwriter.StreamWriter, stat *Statistics) (string, error) {
 	var replyText string
 
 	// 生成 SSE 流
@@ -439,6 +474,10 @@ func (ctl *OpenAIController) writeChatResponse(ctx context.Context, req *chat2.R
 
 	id := 0
 	for {
+		if id == 1 {
+			stat.FirstLetterResponseTime = time.Now()
+		}
+
 		if id > 0 {
 			timer.Reset(30 * time.Second)
 		}
@@ -520,6 +559,7 @@ func (*OpenAIController) buildFinalSystemMessage(
 	req *chat2.Request,
 	maxContextLen int64,
 	chatErrorMessage string,
+	stat *Statistics,
 ) ChatCompletionStreamResponse {
 	finalMsg := FinalMessage{
 		Type:       "summary",
@@ -527,6 +567,9 @@ func (*OpenAIController) buildFinalSystemMessage(
 		AnswerID:   answerID,
 		Token:      int64(realTokenConsumed),
 		Error:      chatErrorMessage,
+
+		FirstLetterRespMicroseconds: stat.FirstLetterResponseCost(),
+		TotalRespMicroseconds:       stat.TotalResponseCost(),
 	}
 
 	if len(req.Messages) >= int(maxContextLen*2) {
@@ -596,19 +639,21 @@ func (ctl *OpenAIController) rateLimitPass(ctx context.Context, user *auth.User,
 	return nil
 }
 
-func (ctl *OpenAIController) saveChatAnswer(ctx context.Context, user *auth.User, replyText string, quotaConsumed int64, realWordCount int, req *chat2.Request, questionID int64, chatErrorMessage string) int64 {
+func (ctl *OpenAIController) saveChatAnswer(ctx context.Context, user *auth.User, replyText string, quotaConsumed int64, realWordCount int, req *chat2.Request, questionID int64, chatErrorMessage string, stat *Statistics) int64 {
 	if ctl.conf.EnableRecordChat && !ctl.apiMode {
 		answerID, err := ctl.messageRepo.Add(ctx, repo2.MessageAddReq{
-			UserID:        user.ID,
-			Message:       replyText,
-			Role:          repo2.MessageRoleAssistant,
-			QuotaConsumed: quotaConsumed,
-			TokenConsumed: int64(realWordCount),
-			RoomID:        req.RoomID,
-			Model:         req.Model,
-			PID:           questionID,
-			Status:        int64(ternary.If(chatErrorMessage != "", repo2.MessageStatusFailed, repo2.MessageStatusSucceed)),
-			Error:         chatErrorMessage,
+			UserID:          user.ID,
+			Message:         replyText,
+			Role:            repo2.MessageRoleAssistant,
+			QuotaConsumed:   quotaConsumed,
+			TokenConsumed:   int64(realWordCount),
+			RoomID:          req.RoomID,
+			Model:           req.Model,
+			PID:             questionID,
+			Status:          int64(ternary.If(chatErrorMessage != "", repo2.MessageStatusFailed, repo2.MessageStatusSucceed)),
+			Error:           chatErrorMessage,
+			FirstLetterCost: stat.FirstLetterResponseCost(),
+			TotalCost:       stat.TotalResponseCost(),
 		})
 		if err != nil {
 			log.With(req).Errorf("add message failed: %s", err)

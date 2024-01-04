@@ -20,19 +20,21 @@ type ChatMessagesN struct {
 	original          *chatMessagesOriginal
 	chatMessagesModel *ChatMessagesModel
 
-	Id            null.Int    `json:"id"`
-	UserId        null.Int    `json:"user_id,omitempty"`
-	RoomId        null.Int    `json:"room_id,omitempty"`
-	Message       null.String `json:"message,omitempty"`
-	Role          null.Int    `json:"role,omitempty"`
-	TokenConsumed null.Int    `json:"token_consumed,omitempty"`
-	QuotaConsumed null.Int    `json:"quota_consumed,omitempty"`
-	Pid           null.Int    `json:"pid,omitempty"`
-	Model         null.String `json:"model,omitempty"`
-	Status        null.Int    `json:"status,omitempty"`
-	Error         null.String `json:"error,omitempty"`
-	CreatedAt     null.Time
-	UpdatedAt     null.Time
+	Id              null.Int    `json:"id"`
+	UserId          null.Int    `json:"user_id,omitempty"`
+	RoomId          null.Int    `json:"room_id,omitempty"`
+	Message         null.String `json:"message,omitempty"`
+	Role            null.Int    `json:"role,omitempty"`
+	TokenConsumed   null.Int    `json:"token_consumed,omitempty"`
+	QuotaConsumed   null.Int    `json:"quota_consumed,omitempty"`
+	Pid             null.Int    `json:"pid,omitempty"`
+	Model           null.String `json:"model,omitempty"`
+	Status          null.Int    `json:"status,omitempty"`
+	Error           null.String `json:"error,omitempty"`
+	FirstLetterCost null.Int    `json:"first_letter_cost,omitempty"`
+	TotalCost       null.Int    `json:"total_cost,omitempty"`
+	CreatedAt       null.Time
+	UpdatedAt       null.Time
 }
 
 // As convert object to other type
@@ -48,19 +50,21 @@ func (inst *ChatMessagesN) SetModel(chatMessagesModel *ChatMessagesModel) {
 
 // chatMessagesOriginal is an object which stores original ChatMessages from database
 type chatMessagesOriginal struct {
-	Id            null.Int
-	UserId        null.Int
-	RoomId        null.Int
-	Message       null.String
-	Role          null.Int
-	TokenConsumed null.Int
-	QuotaConsumed null.Int
-	Pid           null.Int
-	Model         null.String
-	Status        null.Int
-	Error         null.String
-	CreatedAt     null.Time
-	UpdatedAt     null.Time
+	Id              null.Int
+	UserId          null.Int
+	RoomId          null.Int
+	Message         null.String
+	Role            null.Int
+	TokenConsumed   null.Int
+	QuotaConsumed   null.Int
+	Pid             null.Int
+	Model           null.String
+	Status          null.Int
+	Error           null.String
+	FirstLetterCost null.Int
+	TotalCost       null.Int
+	CreatedAt       null.Time
+	UpdatedAt       null.Time
 }
 
 // Staled identify whether the object has been modified
@@ -102,6 +106,12 @@ func (inst *ChatMessagesN) Staled(onlyFields ...string) bool {
 			return true
 		}
 		if inst.Error != inst.original.Error {
+			return true
+		}
+		if inst.FirstLetterCost != inst.original.FirstLetterCost {
+			return true
+		}
+		if inst.TotalCost != inst.original.TotalCost {
 			return true
 		}
 		if inst.CreatedAt != inst.original.CreatedAt {
@@ -156,6 +166,14 @@ func (inst *ChatMessagesN) Staled(onlyFields ...string) bool {
 				}
 			case "error":
 				if inst.Error != inst.original.Error {
+					return true
+				}
+			case "first_letter_cost":
+				if inst.FirstLetterCost != inst.original.FirstLetterCost {
+					return true
+				}
+			case "total_cost":
+				if inst.TotalCost != inst.original.TotalCost {
 					return true
 				}
 			case "created_at":
@@ -217,6 +235,12 @@ func (inst *ChatMessagesN) StaledKV(onlyFields ...string) query.KV {
 		if inst.Error != inst.original.Error {
 			kv["error"] = inst.Error
 		}
+		if inst.FirstLetterCost != inst.original.FirstLetterCost {
+			kv["first_letter_cost"] = inst.FirstLetterCost
+		}
+		if inst.TotalCost != inst.original.TotalCost {
+			kv["total_cost"] = inst.TotalCost
+		}
 		if inst.CreatedAt != inst.original.CreatedAt {
 			kv["created_at"] = inst.CreatedAt
 		}
@@ -270,6 +294,14 @@ func (inst *ChatMessagesN) StaledKV(onlyFields ...string) query.KV {
 			case "error":
 				if inst.Error != inst.original.Error {
 					kv["error"] = inst.Error
+				}
+			case "first_letter_cost":
+				if inst.FirstLetterCost != inst.original.FirstLetterCost {
+					kv["first_letter_cost"] = inst.FirstLetterCost
+				}
+			case "total_cost":
+				if inst.TotalCost != inst.original.TotalCost {
+					kv["total_cost"] = inst.TotalCost
 				}
 			case "created_at":
 				if inst.CreatedAt != inst.original.CreatedAt {
@@ -378,38 +410,42 @@ func (m *ChatMessagesModel) globalScopeEnabled(name string) bool {
 }
 
 type ChatMessages struct {
-	Id            int64  `json:"id"`
-	UserId        int64  `json:"user_id,omitempty"`
-	RoomId        int64  `json:"room_id,omitempty"`
-	Message       string `json:"message,omitempty"`
-	Role          int64  `json:"role,omitempty"`
-	TokenConsumed int64  `json:"token_consumed,omitempty"`
-	QuotaConsumed int64  `json:"quota_consumed,omitempty"`
-	Pid           int64  `json:"pid,omitempty"`
-	Model         string `json:"model,omitempty"`
-	Status        int64  `json:"status,omitempty"`
-	Error         string `json:"error,omitempty"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	Id              int64  `json:"id"`
+	UserId          int64  `json:"user_id,omitempty"`
+	RoomId          int64  `json:"room_id,omitempty"`
+	Message         string `json:"message,omitempty"`
+	Role            int64  `json:"role,omitempty"`
+	TokenConsumed   int64  `json:"token_consumed,omitempty"`
+	QuotaConsumed   int64  `json:"quota_consumed,omitempty"`
+	Pid             int64  `json:"pid,omitempty"`
+	Model           string `json:"model,omitempty"`
+	Status          int64  `json:"status,omitempty"`
+	Error           string `json:"error,omitempty"`
+	FirstLetterCost int64  `json:"first_letter_cost,omitempty"`
+	TotalCost       int64  `json:"total_cost,omitempty"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func (w ChatMessages) ToChatMessagesN(allows ...string) ChatMessagesN {
 	if len(allows) == 0 {
 		return ChatMessagesN{
 
-			Id:            null.IntFrom(int64(w.Id)),
-			UserId:        null.IntFrom(int64(w.UserId)),
-			RoomId:        null.IntFrom(int64(w.RoomId)),
-			Message:       null.StringFrom(w.Message),
-			Role:          null.IntFrom(int64(w.Role)),
-			TokenConsumed: null.IntFrom(int64(w.TokenConsumed)),
-			QuotaConsumed: null.IntFrom(int64(w.QuotaConsumed)),
-			Pid:           null.IntFrom(int64(w.Pid)),
-			Model:         null.StringFrom(w.Model),
-			Status:        null.IntFrom(int64(w.Status)),
-			Error:         null.StringFrom(w.Error),
-			CreatedAt:     null.TimeFrom(w.CreatedAt),
-			UpdatedAt:     null.TimeFrom(w.UpdatedAt),
+			Id:              null.IntFrom(int64(w.Id)),
+			UserId:          null.IntFrom(int64(w.UserId)),
+			RoomId:          null.IntFrom(int64(w.RoomId)),
+			Message:         null.StringFrom(w.Message),
+			Role:            null.IntFrom(int64(w.Role)),
+			TokenConsumed:   null.IntFrom(int64(w.TokenConsumed)),
+			QuotaConsumed:   null.IntFrom(int64(w.QuotaConsumed)),
+			Pid:             null.IntFrom(int64(w.Pid)),
+			Model:           null.StringFrom(w.Model),
+			Status:          null.IntFrom(int64(w.Status)),
+			Error:           null.StringFrom(w.Error),
+			FirstLetterCost: null.IntFrom(int64(w.FirstLetterCost)),
+			TotalCost:       null.IntFrom(int64(w.TotalCost)),
+			CreatedAt:       null.TimeFrom(w.CreatedAt),
+			UpdatedAt:       null.TimeFrom(w.UpdatedAt),
 		}
 	}
 
@@ -439,6 +475,10 @@ func (w ChatMessages) ToChatMessagesN(allows ...string) ChatMessagesN {
 			res.Status = null.IntFrom(int64(w.Status))
 		case "error":
 			res.Error = null.StringFrom(w.Error)
+		case "first_letter_cost":
+			res.FirstLetterCost = null.IntFrom(int64(w.FirstLetterCost))
+		case "total_cost":
+			res.TotalCost = null.IntFrom(int64(w.TotalCost))
 		case "created_at":
 			res.CreatedAt = null.TimeFrom(w.CreatedAt)
 		case "updated_at":
@@ -459,19 +499,21 @@ func (w ChatMessages) As(dst interface{}) error {
 func (w *ChatMessagesN) ToChatMessages() ChatMessages {
 	return ChatMessages{
 
-		Id:            w.Id.Int64,
-		UserId:        w.UserId.Int64,
-		RoomId:        w.RoomId.Int64,
-		Message:       w.Message.String,
-		Role:          w.Role.Int64,
-		TokenConsumed: w.TokenConsumed.Int64,
-		QuotaConsumed: w.QuotaConsumed.Int64,
-		Pid:           w.Pid.Int64,
-		Model:         w.Model.String,
-		Status:        w.Status.Int64,
-		Error:         w.Error.String,
-		CreatedAt:     w.CreatedAt.Time,
-		UpdatedAt:     w.UpdatedAt.Time,
+		Id:              w.Id.Int64,
+		UserId:          w.UserId.Int64,
+		RoomId:          w.RoomId.Int64,
+		Message:         w.Message.String,
+		Role:            w.Role.Int64,
+		TokenConsumed:   w.TokenConsumed.Int64,
+		QuotaConsumed:   w.QuotaConsumed.Int64,
+		Pid:             w.Pid.Int64,
+		Model:           w.Model.String,
+		Status:          w.Status.Int64,
+		Error:           w.Error.String,
+		FirstLetterCost: w.FirstLetterCost.Int64,
+		TotalCost:       w.TotalCost.Int64,
+		CreatedAt:       w.CreatedAt.Time,
+		UpdatedAt:       w.UpdatedAt.Time,
 	}
 }
 
@@ -494,19 +536,21 @@ func ChatMessagesTable() string {
 }
 
 const (
-	FieldChatMessagesId            = "id"
-	FieldChatMessagesUserId        = "user_id"
-	FieldChatMessagesRoomId        = "room_id"
-	FieldChatMessagesMessage       = "message"
-	FieldChatMessagesRole          = "role"
-	FieldChatMessagesTokenConsumed = "token_consumed"
-	FieldChatMessagesQuotaConsumed = "quota_consumed"
-	FieldChatMessagesPid           = "pid"
-	FieldChatMessagesModel         = "model"
-	FieldChatMessagesStatus        = "status"
-	FieldChatMessagesError         = "error"
-	FieldChatMessagesCreatedAt     = "created_at"
-	FieldChatMessagesUpdatedAt     = "updated_at"
+	FieldChatMessagesId              = "id"
+	FieldChatMessagesUserId          = "user_id"
+	FieldChatMessagesRoomId          = "room_id"
+	FieldChatMessagesMessage         = "message"
+	FieldChatMessagesRole            = "role"
+	FieldChatMessagesTokenConsumed   = "token_consumed"
+	FieldChatMessagesQuotaConsumed   = "quota_consumed"
+	FieldChatMessagesPid             = "pid"
+	FieldChatMessagesModel           = "model"
+	FieldChatMessagesStatus          = "status"
+	FieldChatMessagesError           = "error"
+	FieldChatMessagesFirstLetterCost = "first_letter_cost"
+	FieldChatMessagesTotalCost       = "total_cost"
+	FieldChatMessagesCreatedAt       = "created_at"
+	FieldChatMessagesUpdatedAt       = "updated_at"
 )
 
 // ChatMessagesFields return all fields in ChatMessages model
@@ -523,6 +567,8 @@ func ChatMessagesFields() []string {
 		"model",
 		"status",
 		"error",
+		"first_letter_cost",
+		"total_cost",
 		"created_at",
 		"updated_at",
 	}
@@ -666,6 +712,8 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 			"model",
 			"status",
 			"error",
+			"first_letter_cost",
+			"total_cost",
 			"created_at",
 			"updated_at",
 		)
@@ -698,6 +746,10 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 		case "status":
 			selectFields = append(selectFields, f)
 		case "error":
+			selectFields = append(selectFields, f)
+		case "first_letter_cost":
+			selectFields = append(selectFields, f)
+		case "total_cost":
 			selectFields = append(selectFields, f)
 		case "created_at":
 			selectFields = append(selectFields, f)
@@ -735,6 +787,10 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 				scanFields = append(scanFields, &chatMessagesVar.Status)
 			case "error":
 				scanFields = append(scanFields, &chatMessagesVar.Error)
+			case "first_letter_cost":
+				scanFields = append(scanFields, &chatMessagesVar.FirstLetterCost)
+			case "total_cost":
+				scanFields = append(scanFields, &chatMessagesVar.TotalCost)
 			case "created_at":
 				scanFields = append(scanFields, &chatMessagesVar.CreatedAt)
 			case "updated_at":

@@ -446,6 +446,7 @@ type ChatGroupMessageUpdate struct {
 	QuotaConsumed int64  `json:"quota_consumed,omitempty"`
 	Status        int64  `json:"status,omitempty"`
 	Error         string `json:"error,omitempty"`
+	TotalCost     int64  `json:"total_cost,omitempty"`
 }
 
 // UpdateChatMessage 更新聊天消息
@@ -462,6 +463,7 @@ func (repo *ChatGroupRepo) UpdateChatMessage(ctx context.Context, groupID, userI
 			model2.FieldChatGroupMessageQuotaConsumed: msg.QuotaConsumed,
 			model2.FieldChatGroupMessageStatus:        msg.Status,
 			model2.FieldChatGroupMessageError:         msg.Error,
+			model2.FieldChatGroupMessageTotalCost:     msg.TotalCost,
 		}, q)
 
 		return err

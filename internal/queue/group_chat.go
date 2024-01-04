@@ -115,11 +115,15 @@ func BuildGroupChatHandler(conf *config.Config, ct chat.Chat, rep *repo2.Reposit
 			panic(fmt.Errorf("fix chat request failed: %w", err))
 		}
 
+		startTime := time.Now()
+
 		// 调用 AI 系统
 		resp, err := ct.Chat(ctx, *req)
 		if err != nil {
 			panic(fmt.Errorf("chat failed: %w", err))
 		}
+
+		totalCost := time.Since(startTime).Microseconds()
 
 		if resp.ErrorCode != "" {
 			panic(fmt.Errorf("chat failed: %s %s", resp.ErrorCode, resp.Error))
@@ -140,6 +144,7 @@ func BuildGroupChatHandler(conf *config.Config, ct chat.Chat, rep *repo2.Reposit
 			TokenConsumed: tokenConsumed,
 			QuotaConsumed: quotaConsumed,
 			Status:        repo2.MessageStatusSucceed,
+			TotalCost:     totalCost,
 		}
 		if err := rep.ChatGroup.UpdateChatMessage(ctx, payload.GroupID, payload.UserID, payload.MessageID, msg); err != nil {
 			panic(fmt.Errorf("update chat message failed: %w", err))

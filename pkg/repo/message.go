@@ -28,16 +28,18 @@ const (
 )
 
 type MessageAddReq struct {
-	UserID        int64
-	RoomID  int64
-	Role    MessageRole
-	Message string
-	QuotaConsumed int64
-	TokenConsumed int64
-	PID           int64
-	Model         string
-	Status        int64
-	Error         string
+	UserID          int64
+	RoomID          int64
+	Role            MessageRole
+	Message         string
+	QuotaConsumed   int64
+	TokenConsumed   int64
+	PID             int64
+	Model           string
+	Status          int64
+	Error           string
+	FirstLetterCost int64
+	TotalCost       int64
 }
 
 func (r *MessageRepo) Add(ctx context.Context, req MessageAddReq) (int64, error) {
@@ -47,13 +49,15 @@ func (r *MessageRepo) Add(ctx context.Context, req MessageAddReq) (int64, error)
 
 	var id int64
 	kvs := query.KV{
-		model2.FieldChatMessagesUserId:        req.UserID,
-		model2.FieldChatMessagesRoomId:        req.RoomID,
-		model2.FieldChatMessagesRole:          req.Role,
-		model2.FieldChatMessagesMessage:       req.Message,
-		model2.FieldChatMessagesQuotaConsumed: req.QuotaConsumed,
-		model2.FieldChatMessagesTokenConsumed: req.TokenConsumed,
-		model2.FieldChatMessagesStatus:        req.Status,
+		model2.FieldChatMessagesUserId:          req.UserID,
+		model2.FieldChatMessagesRoomId:          req.RoomID,
+		model2.FieldChatMessagesRole:            req.Role,
+		model2.FieldChatMessagesMessage:         req.Message,
+		model2.FieldChatMessagesQuotaConsumed:   req.QuotaConsumed,
+		model2.FieldChatMessagesTokenConsumed:   req.TokenConsumed,
+		model2.FieldChatMessagesStatus:          req.Status,
+		model2.FieldChatMessagesFirstLetterCost: req.FirstLetterCost,
+		model2.FieldChatMessagesTotalCost:       req.TotalCost,
 	}
 
 	if req.PID > 0 {

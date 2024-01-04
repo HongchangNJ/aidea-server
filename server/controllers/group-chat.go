@@ -230,6 +230,7 @@ func (ctl *GroupChatController) GroupMessages(ctx context.Context, webCtx web.Co
 
 	messages, lastID, err := ctl.repo.ChatGroup.GetChatMessages(ctx, int64(groupID), user.ID, startID, perPage)
 	if err != nil {
+		log.Errorf("get group messages failed: %s", err)
 		return webCtx.JSONError("internal server error", http.StatusInternalServerError)
 	}
 
