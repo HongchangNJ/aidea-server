@@ -751,21 +751,22 @@ type ChatGroupMessageN struct {
 	original              *chatGroupMessageOriginal
 	chatGroupMessageModel *ChatGroupMessageModel
 
-	Id            null.Int    `json:"id"`
-	GroupId       null.Int    `json:"group_id,omitempty"`
-	UserId        null.Int    `json:"user_id,omitempty"`
-	Message       null.String `json:"message,omitempty"`
-	Role          null.Int    `json:"role,omitempty"`
-	TokenConsumed null.Int    `json:"token_consumed,omitempty"`
-	QuotaConsumed null.Int    `json:"quota_consumed,omitempty"`
-	Pid           null.Int    `json:"pid,omitempty"`
-	MemberId      null.Int    `json:"member_id,omitempty"`
-	Status        null.Int    `json:"status,omitempty"`
-	Error         null.String `json:"error,omitempty"`
-	TotalCost     null.Int    `json:"total_cost,omitempty"`
-	Rating        null.Int    `json:"rating,omitempty"`
-	CreatedAt     null.Time
-	UpdatedAt     null.Time
+	Id              null.Int    `json:"id"`
+	GroupId         null.Int    `json:"group_id,omitempty"`
+	UserId          null.Int    `json:"user_id,omitempty"`
+	Message         null.String `json:"message,omitempty"`
+	Role            null.Int    `json:"role,omitempty"`
+	TokenConsumed   null.Int    `json:"token_consumed,omitempty"`
+	QuotaConsumed   null.Int    `json:"quota_consumed,omitempty"`
+	Pid             null.Int    `json:"pid,omitempty"`
+	MemberId        null.Int    `json:"member_id,omitempty"`
+	Status          null.Int    `json:"status,omitempty"`
+	Error           null.String `json:"error,omitempty"`
+	FirstLetterCost null.Int    `json:"first_letter_cost,omitempty"`
+	TotalCost       null.Int    `json:"total_cost,omitempty"`
+	Rating          null.Int    `json:"rating,omitempty"`
+	CreatedAt       null.Time
+	UpdatedAt       null.Time
 }
 
 // As convert object to other type
@@ -781,21 +782,22 @@ func (inst *ChatGroupMessageN) SetModel(chatGroupMessageModel *ChatGroupMessageM
 
 // chatGroupMessageOriginal is an object which stores original ChatGroupMessage from database
 type chatGroupMessageOriginal struct {
-	Id            null.Int
-	GroupId       null.Int
-	UserId        null.Int
-	Message       null.String
-	Role          null.Int
-	TokenConsumed null.Int
-	QuotaConsumed null.Int
-	Pid           null.Int
-	MemberId      null.Int
-	Status        null.Int
-	Error         null.String
-	TotalCost     null.Int
-	Rating        null.Int
-	CreatedAt     null.Time
-	UpdatedAt     null.Time
+	Id              null.Int
+	GroupId         null.Int
+	UserId          null.Int
+	Message         null.String
+	Role            null.Int
+	TokenConsumed   null.Int
+	QuotaConsumed   null.Int
+	Pid             null.Int
+	MemberId        null.Int
+	Status          null.Int
+	Error           null.String
+	FirstLetterCost null.Int
+	TotalCost       null.Int
+	Rating          null.Int
+	CreatedAt       null.Time
+	UpdatedAt       null.Time
 }
 
 // Staled identify whether the object has been modified
@@ -837,6 +839,9 @@ func (inst *ChatGroupMessageN) Staled(onlyFields ...string) bool {
 			return true
 		}
 		if inst.Error != inst.original.Error {
+			return true
+		}
+		if inst.FirstLetterCost != inst.original.FirstLetterCost {
 			return true
 		}
 		if inst.TotalCost != inst.original.TotalCost {
@@ -897,6 +902,10 @@ func (inst *ChatGroupMessageN) Staled(onlyFields ...string) bool {
 				}
 			case "error":
 				if inst.Error != inst.original.Error {
+					return true
+				}
+			case "first_letter_cost":
+				if inst.FirstLetterCost != inst.original.FirstLetterCost {
 					return true
 				}
 			case "total_cost":
@@ -966,6 +975,9 @@ func (inst *ChatGroupMessageN) StaledKV(onlyFields ...string) query.KV {
 		if inst.Error != inst.original.Error {
 			kv["error"] = inst.Error
 		}
+		if inst.FirstLetterCost != inst.original.FirstLetterCost {
+			kv["first_letter_cost"] = inst.FirstLetterCost
+		}
 		if inst.TotalCost != inst.original.TotalCost {
 			kv["total_cost"] = inst.TotalCost
 		}
@@ -1025,6 +1037,10 @@ func (inst *ChatGroupMessageN) StaledKV(onlyFields ...string) query.KV {
 			case "error":
 				if inst.Error != inst.original.Error {
 					kv["error"] = inst.Error
+				}
+			case "first_letter_cost":
+				if inst.FirstLetterCost != inst.original.FirstLetterCost {
+					kv["first_letter_cost"] = inst.FirstLetterCost
 				}
 			case "total_cost":
 				if inst.TotalCost != inst.original.TotalCost {
@@ -1141,42 +1157,44 @@ func (m *ChatGroupMessageModel) globalScopeEnabled(name string) bool {
 }
 
 type ChatGroupMessage struct {
-	Id            int64  `json:"id"`
-	GroupId       int64  `json:"group_id,omitempty"`
-	UserId        int64  `json:"user_id,omitempty"`
-	Message       string `json:"message,omitempty"`
-	Role          int64  `json:"role,omitempty"`
-	TokenConsumed int64  `json:"token_consumed,omitempty"`
-	QuotaConsumed int64  `json:"quota_consumed,omitempty"`
-	Pid           int64  `json:"pid,omitempty"`
-	MemberId      int64  `json:"member_id,omitempty"`
-	Status        int64  `json:"status,omitempty"`
-	Error         string `json:"error,omitempty"`
-	TotalCost     int64  `json:"total_cost,omitempty"`
-	Rating        int64  `json:"rating,omitempty"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	Id              int64  `json:"id"`
+	GroupId         int64  `json:"group_id,omitempty"`
+	UserId          int64  `json:"user_id,omitempty"`
+	Message         string `json:"message,omitempty"`
+	Role            int64  `json:"role,omitempty"`
+	TokenConsumed   int64  `json:"token_consumed,omitempty"`
+	QuotaConsumed   int64  `json:"quota_consumed,omitempty"`
+	Pid             int64  `json:"pid,omitempty"`
+	MemberId        int64  `json:"member_id,omitempty"`
+	Status          int64  `json:"status,omitempty"`
+	Error           string `json:"error,omitempty"`
+	FirstLetterCost int64  `json:"first_letter_cost,omitempty"`
+	TotalCost       int64  `json:"total_cost,omitempty"`
+	Rating          int64  `json:"rating,omitempty"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func (w ChatGroupMessage) ToChatGroupMessageN(allows ...string) ChatGroupMessageN {
 	if len(allows) == 0 {
 		return ChatGroupMessageN{
 
-			Id:            null.IntFrom(int64(w.Id)),
-			GroupId:       null.IntFrom(int64(w.GroupId)),
-			UserId:        null.IntFrom(int64(w.UserId)),
-			Message:       null.StringFrom(w.Message),
-			Role:          null.IntFrom(int64(w.Role)),
-			TokenConsumed: null.IntFrom(int64(w.TokenConsumed)),
-			QuotaConsumed: null.IntFrom(int64(w.QuotaConsumed)),
-			Pid:           null.IntFrom(int64(w.Pid)),
-			MemberId:      null.IntFrom(int64(w.MemberId)),
-			Status:        null.IntFrom(int64(w.Status)),
-			Error:         null.StringFrom(w.Error),
-			TotalCost:     null.IntFrom(int64(w.TotalCost)),
-			Rating:        null.IntFrom(int64(w.Rating)),
-			CreatedAt:     null.TimeFrom(w.CreatedAt),
-			UpdatedAt:     null.TimeFrom(w.UpdatedAt),
+			Id:              null.IntFrom(int64(w.Id)),
+			GroupId:         null.IntFrom(int64(w.GroupId)),
+			UserId:          null.IntFrom(int64(w.UserId)),
+			Message:         null.StringFrom(w.Message),
+			Role:            null.IntFrom(int64(w.Role)),
+			TokenConsumed:   null.IntFrom(int64(w.TokenConsumed)),
+			QuotaConsumed:   null.IntFrom(int64(w.QuotaConsumed)),
+			Pid:             null.IntFrom(int64(w.Pid)),
+			MemberId:        null.IntFrom(int64(w.MemberId)),
+			Status:          null.IntFrom(int64(w.Status)),
+			Error:           null.StringFrom(w.Error),
+			FirstLetterCost: null.IntFrom(int64(w.FirstLetterCost)),
+			TotalCost:       null.IntFrom(int64(w.TotalCost)),
+			Rating:          null.IntFrom(int64(w.Rating)),
+			CreatedAt:       null.TimeFrom(w.CreatedAt),
+			UpdatedAt:       null.TimeFrom(w.UpdatedAt),
 		}
 	}
 
@@ -1206,6 +1224,8 @@ func (w ChatGroupMessage) ToChatGroupMessageN(allows ...string) ChatGroupMessage
 			res.Status = null.IntFrom(int64(w.Status))
 		case "error":
 			res.Error = null.StringFrom(w.Error)
+		case "first_letter_cost":
+			res.FirstLetterCost = null.IntFrom(int64(w.FirstLetterCost))
 		case "total_cost":
 			res.TotalCost = null.IntFrom(int64(w.TotalCost))
 		case "rating":
@@ -1230,21 +1250,22 @@ func (w ChatGroupMessage) As(dst interface{}) error {
 func (w *ChatGroupMessageN) ToChatGroupMessage() ChatGroupMessage {
 	return ChatGroupMessage{
 
-		Id:            w.Id.Int64,
-		GroupId:       w.GroupId.Int64,
-		UserId:        w.UserId.Int64,
-		Message:       w.Message.String,
-		Role:          w.Role.Int64,
-		TokenConsumed: w.TokenConsumed.Int64,
-		QuotaConsumed: w.QuotaConsumed.Int64,
-		Pid:           w.Pid.Int64,
-		MemberId:      w.MemberId.Int64,
-		Status:        w.Status.Int64,
-		Error:         w.Error.String,
-		TotalCost:     w.TotalCost.Int64,
-		Rating:        w.Rating.Int64,
-		CreatedAt:     w.CreatedAt.Time,
-		UpdatedAt:     w.UpdatedAt.Time,
+		Id:              w.Id.Int64,
+		GroupId:         w.GroupId.Int64,
+		UserId:          w.UserId.Int64,
+		Message:         w.Message.String,
+		Role:            w.Role.Int64,
+		TokenConsumed:   w.TokenConsumed.Int64,
+		QuotaConsumed:   w.QuotaConsumed.Int64,
+		Pid:             w.Pid.Int64,
+		MemberId:        w.MemberId.Int64,
+		Status:          w.Status.Int64,
+		Error:           w.Error.String,
+		FirstLetterCost: w.FirstLetterCost.Int64,
+		TotalCost:       w.TotalCost.Int64,
+		Rating:          w.Rating.Int64,
+		CreatedAt:       w.CreatedAt.Time,
+		UpdatedAt:       w.UpdatedAt.Time,
 	}
 }
 
@@ -1267,21 +1288,22 @@ func ChatGroupMessageTable() string {
 }
 
 const (
-	FieldChatGroupMessageId            = "id"
-	FieldChatGroupMessageGroupId       = "group_id"
-	FieldChatGroupMessageUserId        = "user_id"
-	FieldChatGroupMessageMessage       = "message"
-	FieldChatGroupMessageRole          = "role"
-	FieldChatGroupMessageTokenConsumed = "token_consumed"
-	FieldChatGroupMessageQuotaConsumed = "quota_consumed"
-	FieldChatGroupMessagePid           = "pid"
-	FieldChatGroupMessageMemberId      = "member_id"
-	FieldChatGroupMessageStatus        = "status"
-	FieldChatGroupMessageError         = "error"
-	FieldChatGroupMessageTotalCost     = "total_cost"
-	FieldChatGroupMessageRating        = "rating"
-	FieldChatGroupMessageCreatedAt     = "created_at"
-	FieldChatGroupMessageUpdatedAt     = "updated_at"
+	FieldChatGroupMessageId              = "id"
+	FieldChatGroupMessageGroupId         = "group_id"
+	FieldChatGroupMessageUserId          = "user_id"
+	FieldChatGroupMessageMessage         = "message"
+	FieldChatGroupMessageRole            = "role"
+	FieldChatGroupMessageTokenConsumed   = "token_consumed"
+	FieldChatGroupMessageQuotaConsumed   = "quota_consumed"
+	FieldChatGroupMessagePid             = "pid"
+	FieldChatGroupMessageMemberId        = "member_id"
+	FieldChatGroupMessageStatus          = "status"
+	FieldChatGroupMessageError           = "error"
+	FieldChatGroupMessageFirstLetterCost = "first_letter_cost"
+	FieldChatGroupMessageTotalCost       = "total_cost"
+	FieldChatGroupMessageRating          = "rating"
+	FieldChatGroupMessageCreatedAt       = "created_at"
+	FieldChatGroupMessageUpdatedAt       = "updated_at"
 )
 
 // ChatGroupMessageFields return all fields in ChatGroupMessage model
@@ -1298,6 +1320,7 @@ func ChatGroupMessageFields() []string {
 		"member_id",
 		"status",
 		"error",
+		"first_letter_cost",
 		"total_cost",
 		"rating",
 		"created_at",
@@ -1443,6 +1466,7 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 			"member_id",
 			"status",
 			"error",
+			"first_letter_cost",
 			"total_cost",
 			"rating",
 			"created_at",
@@ -1477,6 +1501,8 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 		case "status":
 			selectFields = append(selectFields, f)
 		case "error":
+			selectFields = append(selectFields, f)
+		case "first_letter_cost":
 			selectFields = append(selectFields, f)
 		case "total_cost":
 			selectFields = append(selectFields, f)
@@ -1518,6 +1544,8 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 				scanFields = append(scanFields, &chatGroupMessageVar.Status)
 			case "error":
 				scanFields = append(scanFields, &chatGroupMessageVar.Error)
+			case "first_letter_cost":
+				scanFields = append(scanFields, &chatGroupMessageVar.FirstLetterCost)
 			case "total_cost":
 				scanFields = append(scanFields, &chatGroupMessageVar.TotalCost)
 			case "rating":

@@ -441,12 +441,13 @@ func (repo *ChatGroupRepo) GetChatMessagesStatus(ctx context.Context, groupID, u
 }
 
 type ChatGroupMessageUpdate struct {
-	Message       string `json:"message,omitempty"`
-	TokenConsumed int64  `json:"token_consumed,omitempty"`
-	QuotaConsumed int64  `json:"quota_consumed,omitempty"`
-	Status        int64  `json:"status,omitempty"`
-	Error         string `json:"error,omitempty"`
-	TotalCost     int64  `json:"total_cost,omitempty"`
+	Message         string `json:"message,omitempty"`
+	TokenConsumed   int64  `json:"token_consumed,omitempty"`
+	QuotaConsumed   int64  `json:"quota_consumed,omitempty"`
+	Status          int64  `json:"status,omitempty"`
+	Error           string `json:"error,omitempty"`
+	TotalCost       int64  `json:"total_cost,omitempty"`
+	FirstLetterCost int64  `json:"first_letter_cost,omitempty"`
 }
 
 // UpdateChatMessage 更新聊天消息
@@ -458,12 +459,13 @@ func (repo *ChatGroupRepo) UpdateChatMessage(ctx context.Context, groupID, userI
 			Where(model2.FieldChatGroupMessageId, messageID)
 
 		_, err := model2.NewChatGroupMessageModel(tx).UpdateFields(ctx, query.KV{
-			model2.FieldChatGroupMessageMessage:       msg.Message,
-			model2.FieldChatGroupMessageTokenConsumed: msg.TokenConsumed,
-			model2.FieldChatGroupMessageQuotaConsumed: msg.QuotaConsumed,
-			model2.FieldChatGroupMessageStatus:        msg.Status,
-			model2.FieldChatGroupMessageError:         msg.Error,
-			model2.FieldChatGroupMessageTotalCost:     msg.TotalCost,
+			model2.FieldChatGroupMessageMessage:         msg.Message,
+			model2.FieldChatGroupMessageTokenConsumed:   msg.TokenConsumed,
+			model2.FieldChatGroupMessageQuotaConsumed:   msg.QuotaConsumed,
+			model2.FieldChatGroupMessageStatus:          msg.Status,
+			model2.FieldChatGroupMessageError:           msg.Error,
+			model2.FieldChatGroupMessageTotalCost:       msg.TotalCost,
+			model2.FieldChatGroupMessageFirstLetterCost: msg.FirstLetterCost,
 		}, q)
 
 		return err

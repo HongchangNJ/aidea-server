@@ -60,6 +60,9 @@ models:
     - name: error
       type: string
       tag: json:"error,omitempty"
+    - name: first_letter_cost
+      type: int64
+      tag: json:"first_letter_cost,omitempty"
     - name: total_cost
       type: int64
       tag: json:"total_cost,omitempty"

@@ -117,35 +117,84 @@ func BuildGroupChatHandler(conf *config.Config, ct chat.Chat, rep *repo2.Reposit
 
 		startTime := time.Now()
 
-		// 调用 AI 系统
-		resp, err := ct.Chat(ctx, *req)
+		stream, err := ct.ChatStream(ctx, *req)
 		if err != nil {
 			panic(fmt.Errorf("chat failed: %w", err))
 		}
 
-		totalCost := time.Since(startTime).Microseconds()
+		var replyText string
+		var firstLetterResponseTime time.Time
+		func() {
+			ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+			defer cancel()
 
-		if resp.ErrorCode != "" {
-			panic(fmt.Errorf("chat failed: %s %s", resp.ErrorCode, resp.Error))
+			id := 0
+			for {
+				if id == 1 {
+					firstLetterResponseTime = time.Now()
+				}
+
+				select {
+				case <-ctx.Done():
+					return
+				case res, ok := <-stream:
+					if !ok {
+						return
+					}
+
+					id++
+
+					if res.ErrorCode != "" {
+						log.WithFields(log.Fields{"req": req, "user_id": payload.UserID}).Errorf("【群聊】聊天响应失败: %v", res)
+
+						if res.Error != "" {
+							res.Text = fmt.Sprintf("\n\n---\n抱歉，我们遇到了一些错误，以下是错误详情：\n%s\n", res.Error)
+						}
+
+						replyText += res.Text
+						err = fmt.Errorf("chat failed: %s %s", res.ErrorCode, res.Error)
+						return
+					} else {
+						replyText += res.Text
+					}
+				}
+			}
+		}()
+
+		if err != nil {
+			panic(err)
 		}
 
-		tokenConsumed := int64(resp.InputTokens + resp.OutputTokens)
+		totalCost := time.Since(startTime).Microseconds()
+
+		messages := append(req.Messages, chat.Message{
+			Role:    "assistant",
+			Content: replyText,
+		})
+
+		tokenConsumed, _ := chat.MessageTokenCount(messages, req.Model)
+
 		// 免费请求不计费
 		leftCount, _ := userSrv.FreeChatRequestCounts(ctx, payload.UserID, req.Model)
 		quotaConsumed := ternary.IfLazy(
 			leftCount > 0,
 			func() int64 { return 0 },
-			func() int64 { return coins.GetOpenAITextCoins(req.ResolveCalFeeModel(conf), tokenConsumed) },
+			func() int64 { return coins.GetOpenAITextCoins(req.ResolveCalFeeModel(conf), int64(tokenConsumed)) },
 		)
 
 		// 更新消息状态
 		msg := repo2.ChatGroupMessageUpdate{
-			Message:       resp.Text,
-			TokenConsumed: tokenConsumed,
+			Message:       replyText,
+			TokenConsumed: int64(tokenConsumed),
 			QuotaConsumed: quotaConsumed,
 			Status:        repo2.MessageStatusSucceed,
 			TotalCost:     totalCost,
 		}
+
+		if !firstLetterResponseTime.IsZero() {
+			msg.FirstLetterCost = firstLetterResponseTime.Sub(startTime).Microseconds()
+		}
+
 		if err := rep.ChatGroup.UpdateChatMessage(ctx, payload.GroupID, payload.UserID, payload.MessageID, msg); err != nil {
 			panic(fmt.Errorf("update chat message failed: %w", err))
 		}
