@@ -119,3 +119,17 @@ func (r *MessageRepo) UpdateMessageStatus(ctx context.Context, id int64, req Mes
 	_, err := model2.NewChatMessagesModel(r.db).UpdateFields(ctx, kv, query.Builder().Where(model2.FieldChatMessagesId, id))
 	return err
 }
+
+// UpdateRating 更新消息评分
+func (r *MessageRepo) UpdateRating(ctx context.Context, userID, id int64, rating int64) error {
+	q := query.Builder().
+		Where(model2.FieldChatMessagesId, id).
+		Where(model2.FieldChatMessagesUserId, userID)
+
+	data := query.KV{
+		model2.FieldChatMessagesRating: rating,
+	}
+
+	_, err := model2.NewChatMessagesModel(r.db).UpdateFields(ctx, data, q)
+	return err
+}

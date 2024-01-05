@@ -763,6 +763,7 @@ type ChatGroupMessageN struct {
 	Status        null.Int    `json:"status,omitempty"`
 	Error         null.String `json:"error,omitempty"`
 	TotalCost     null.Int    `json:"total_cost,omitempty"`
+	Rating        null.Int    `json:"rating,omitempty"`
 	CreatedAt     null.Time
 	UpdatedAt     null.Time
 }
@@ -792,6 +793,7 @@ type chatGroupMessageOriginal struct {
 	Status        null.Int
 	Error         null.String
 	TotalCost     null.Int
+	Rating        null.Int
 	CreatedAt     null.Time
 	UpdatedAt     null.Time
 }
@@ -838,6 +840,9 @@ func (inst *ChatGroupMessageN) Staled(onlyFields ...string) bool {
 			return true
 		}
 		if inst.TotalCost != inst.original.TotalCost {
+			return true
+		}
+		if inst.Rating != inst.original.Rating {
 			return true
 		}
 		if inst.CreatedAt != inst.original.CreatedAt {
@@ -896,6 +901,10 @@ func (inst *ChatGroupMessageN) Staled(onlyFields ...string) bool {
 				}
 			case "total_cost":
 				if inst.TotalCost != inst.original.TotalCost {
+					return true
+				}
+			case "rating":
+				if inst.Rating != inst.original.Rating {
 					return true
 				}
 			case "created_at":
@@ -960,6 +969,9 @@ func (inst *ChatGroupMessageN) StaledKV(onlyFields ...string) query.KV {
 		if inst.TotalCost != inst.original.TotalCost {
 			kv["total_cost"] = inst.TotalCost
 		}
+		if inst.Rating != inst.original.Rating {
+			kv["rating"] = inst.Rating
+		}
 		if inst.CreatedAt != inst.original.CreatedAt {
 			kv["created_at"] = inst.CreatedAt
 		}
@@ -1017,6 +1029,10 @@ func (inst *ChatGroupMessageN) StaledKV(onlyFields ...string) query.KV {
 			case "total_cost":
 				if inst.TotalCost != inst.original.TotalCost {
 					kv["total_cost"] = inst.TotalCost
+				}
+			case "rating":
+				if inst.Rating != inst.original.Rating {
+					kv["rating"] = inst.Rating
 				}
 			case "created_at":
 				if inst.CreatedAt != inst.original.CreatedAt {
@@ -1137,6 +1153,7 @@ type ChatGroupMessage struct {
 	Status        int64  `json:"status,omitempty"`
 	Error         string `json:"error,omitempty"`
 	TotalCost     int64  `json:"total_cost,omitempty"`
+	Rating        int64  `json:"rating,omitempty"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -1157,6 +1174,7 @@ func (w ChatGroupMessage) ToChatGroupMessageN(allows ...string) ChatGroupMessage
 			Status:        null.IntFrom(int64(w.Status)),
 			Error:         null.StringFrom(w.Error),
 			TotalCost:     null.IntFrom(int64(w.TotalCost)),
+			Rating:        null.IntFrom(int64(w.Rating)),
 			CreatedAt:     null.TimeFrom(w.CreatedAt),
 			UpdatedAt:     null.TimeFrom(w.UpdatedAt),
 		}
@@ -1190,6 +1208,8 @@ func (w ChatGroupMessage) ToChatGroupMessageN(allows ...string) ChatGroupMessage
 			res.Error = null.StringFrom(w.Error)
 		case "total_cost":
 			res.TotalCost = null.IntFrom(int64(w.TotalCost))
+		case "rating":
+			res.Rating = null.IntFrom(int64(w.Rating))
 		case "created_at":
 			res.CreatedAt = null.TimeFrom(w.CreatedAt)
 		case "updated_at":
@@ -1222,6 +1242,7 @@ func (w *ChatGroupMessageN) ToChatGroupMessage() ChatGroupMessage {
 		Status:        w.Status.Int64,
 		Error:         w.Error.String,
 		TotalCost:     w.TotalCost.Int64,
+		Rating:        w.Rating.Int64,
 		CreatedAt:     w.CreatedAt.Time,
 		UpdatedAt:     w.UpdatedAt.Time,
 	}
@@ -1258,6 +1279,7 @@ const (
 	FieldChatGroupMessageStatus        = "status"
 	FieldChatGroupMessageError         = "error"
 	FieldChatGroupMessageTotalCost     = "total_cost"
+	FieldChatGroupMessageRating        = "rating"
 	FieldChatGroupMessageCreatedAt     = "created_at"
 	FieldChatGroupMessageUpdatedAt     = "updated_at"
 )
@@ -1277,6 +1299,7 @@ func ChatGroupMessageFields() []string {
 		"status",
 		"error",
 		"total_cost",
+		"rating",
 		"created_at",
 		"updated_at",
 	}
@@ -1421,6 +1444,7 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 			"status",
 			"error",
 			"total_cost",
+			"rating",
 			"created_at",
 			"updated_at",
 		)
@@ -1455,6 +1479,8 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 		case "error":
 			selectFields = append(selectFields, f)
 		case "total_cost":
+			selectFields = append(selectFields, f)
+		case "rating":
 			selectFields = append(selectFields, f)
 		case "created_at":
 			selectFields = append(selectFields, f)
@@ -1494,6 +1520,8 @@ func (m *ChatGroupMessageModel) Get(ctx context.Context, builders ...query.SQLBu
 				scanFields = append(scanFields, &chatGroupMessageVar.Error)
 			case "total_cost":
 				scanFields = append(scanFields, &chatGroupMessageVar.TotalCost)
+			case "rating":
+				scanFields = append(scanFields, &chatGroupMessageVar.Rating)
 			case "created_at":
 				scanFields = append(scanFields, &chatGroupMessageVar.CreatedAt)
 			case "updated_at":

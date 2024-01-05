@@ -97,6 +97,7 @@ func routes(resolver infra.Resolver, router web.Router, mw web.RequestMiddleware
 		"/v1/room-galleries",  // 数字人 Gallery
 		"/v1/voice",           // 语音合成
 		"/v1/admin",           // 管理员接口
+		"/v1/messages",        // 消息管理
 
 		// v2 版本
 		"/v2/creative-island/histories",   // 创作岛历史记录
@@ -291,6 +292,7 @@ func routes(resolver infra.Resolver, router web.Router, mw web.RequestMiddleware
 		controllers.NewTranslateController(resolver, conf),
 		controllers.NewOpenAIController(resolver, conf, false),
 		controllers.NewGroupChatController(resolver),
+		controllers.NewMessageController(resolver),
 
 		controllers.NewAuthController(resolver, conf),
 		controllers.NewUserController(resolver),

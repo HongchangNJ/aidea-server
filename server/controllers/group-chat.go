@@ -47,6 +47,7 @@ func (ctl *GroupChatController) Register(router web.Router) {
 		router.Put("/{group_id}", ctl.UpdateGroup)
 		router.Delete("/{group_id}", ctl.DeleteGroup)
 		router.Get("/{group_id}/messages", ctl.GroupMessages)
+		router.Post("/{group_id}/messages/{message_id}/rating", ctl.UpdateMessageRating)
 		router.Post("/{group_id}/chat", ctl.Chat)
 		router.Post("/{group_id}/chat-system", ctl.ChatSystem)
 		router.Delete("/{group_id}/chat/{message_id}", ctl.DeleteMessage)
@@ -240,6 +241,28 @@ func (ctl *GroupChatController) GroupMessages(ctx context.Context, webCtx web.Co
 		"last_id":  lastID,
 		"per_page": perPage,
 	})
+}
+
+// UpdateMessageRating 更新消息评分
+func (ctl *GroupChatController) UpdateMessageRating(ctx context.Context, webCtx web.Context, user *auth.User) web.Response {
+	groupID, err := strconv.Atoi(webCtx.PathVar("group_id"))
+	if err != nil {
+		return webCtx.JSONError("invalid group id", http.StatusBadRequest)
+	}
+
+	messageID, err := strconv.Atoi(webCtx.PathVar("message_id"))
+	if err != nil {
+		return webCtx.JSONError("invalid message id", http.StatusBadRequest)
+	}
+
+	rating := webCtx.Int64Input("rating", 5)
+
+	if err := ctl.repo.ChatGroup.UpdateRating(ctx, int64(groupID), user.ID, int64(messageID), rating); err != nil {
+		log.Errorf("update message rating failed: %s", err)
+		return webCtx.JSONError("internal server error", http.StatusInternalServerError)
+	}
+
+	return webCtx.JSON(web.M{})
 }
 
 type GroupChatRequest struct {

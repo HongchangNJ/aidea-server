@@ -470,6 +470,21 @@ func (repo *ChatGroupRepo) UpdateChatMessage(ctx context.Context, groupID, userI
 	})
 }
 
+// UpdateRating 更新消息评分
+func (repo *ChatGroupRepo) UpdateRating(ctx context.Context, groupID, userID, messageID int64, rating int64) error {
+	q := query.Builder().
+		Where(model2.FieldChatGroupMessageId, messageID).
+		Where(model2.FieldChatGroupMessageGroupId, groupID).
+		Where(model2.FieldChatGroupMessageUserId, userID)
+
+	data := query.KV{
+		model2.FieldChatGroupMessageRating: rating,
+	}
+
+	_, err := model2.NewChatGroupMessageModel(repo.db).UpdateFields(ctx, data, q)
+	return err
+}
+
 // DeleteGroup 删除群组
 func (repo *ChatGroupRepo) DeleteGroup(ctx context.Context, groupID, userID int64, deleteMessages bool) error {
 	return eloquent.Transaction(repo.db, func(tx query.Database) error {

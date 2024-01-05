@@ -33,6 +33,7 @@ type ChatMessagesN struct {
 	Error           null.String `json:"error,omitempty"`
 	FirstLetterCost null.Int    `json:"first_letter_cost,omitempty"`
 	TotalCost       null.Int    `json:"total_cost,omitempty"`
+	Rating          null.Int    `json:"rating,omitempty"`
 	CreatedAt       null.Time
 	UpdatedAt       null.Time
 }
@@ -63,6 +64,7 @@ type chatMessagesOriginal struct {
 	Error           null.String
 	FirstLetterCost null.Int
 	TotalCost       null.Int
+	Rating          null.Int
 	CreatedAt       null.Time
 	UpdatedAt       null.Time
 }
@@ -112,6 +114,9 @@ func (inst *ChatMessagesN) Staled(onlyFields ...string) bool {
 			return true
 		}
 		if inst.TotalCost != inst.original.TotalCost {
+			return true
+		}
+		if inst.Rating != inst.original.Rating {
 			return true
 		}
 		if inst.CreatedAt != inst.original.CreatedAt {
@@ -174,6 +179,10 @@ func (inst *ChatMessagesN) Staled(onlyFields ...string) bool {
 				}
 			case "total_cost":
 				if inst.TotalCost != inst.original.TotalCost {
+					return true
+				}
+			case "rating":
+				if inst.Rating != inst.original.Rating {
 					return true
 				}
 			case "created_at":
@@ -241,6 +250,9 @@ func (inst *ChatMessagesN) StaledKV(onlyFields ...string) query.KV {
 		if inst.TotalCost != inst.original.TotalCost {
 			kv["total_cost"] = inst.TotalCost
 		}
+		if inst.Rating != inst.original.Rating {
+			kv["rating"] = inst.Rating
+		}
 		if inst.CreatedAt != inst.original.CreatedAt {
 			kv["created_at"] = inst.CreatedAt
 		}
@@ -302,6 +314,10 @@ func (inst *ChatMessagesN) StaledKV(onlyFields ...string) query.KV {
 			case "total_cost":
 				if inst.TotalCost != inst.original.TotalCost {
 					kv["total_cost"] = inst.TotalCost
+				}
+			case "rating":
+				if inst.Rating != inst.original.Rating {
+					kv["rating"] = inst.Rating
 				}
 			case "created_at":
 				if inst.CreatedAt != inst.original.CreatedAt {
@@ -423,6 +439,7 @@ type ChatMessages struct {
 	Error           string `json:"error,omitempty"`
 	FirstLetterCost int64  `json:"first_letter_cost,omitempty"`
 	TotalCost       int64  `json:"total_cost,omitempty"`
+	Rating          int64  `json:"rating,omitempty"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -444,6 +461,7 @@ func (w ChatMessages) ToChatMessagesN(allows ...string) ChatMessagesN {
 			Error:           null.StringFrom(w.Error),
 			FirstLetterCost: null.IntFrom(int64(w.FirstLetterCost)),
 			TotalCost:       null.IntFrom(int64(w.TotalCost)),
+			Rating:          null.IntFrom(int64(w.Rating)),
 			CreatedAt:       null.TimeFrom(w.CreatedAt),
 			UpdatedAt:       null.TimeFrom(w.UpdatedAt),
 		}
@@ -479,6 +497,8 @@ func (w ChatMessages) ToChatMessagesN(allows ...string) ChatMessagesN {
 			res.FirstLetterCost = null.IntFrom(int64(w.FirstLetterCost))
 		case "total_cost":
 			res.TotalCost = null.IntFrom(int64(w.TotalCost))
+		case "rating":
+			res.Rating = null.IntFrom(int64(w.Rating))
 		case "created_at":
 			res.CreatedAt = null.TimeFrom(w.CreatedAt)
 		case "updated_at":
@@ -512,6 +532,7 @@ func (w *ChatMessagesN) ToChatMessages() ChatMessages {
 		Error:           w.Error.String,
 		FirstLetterCost: w.FirstLetterCost.Int64,
 		TotalCost:       w.TotalCost.Int64,
+		Rating:          w.Rating.Int64,
 		CreatedAt:       w.CreatedAt.Time,
 		UpdatedAt:       w.UpdatedAt.Time,
 	}
@@ -549,6 +570,7 @@ const (
 	FieldChatMessagesError           = "error"
 	FieldChatMessagesFirstLetterCost = "first_letter_cost"
 	FieldChatMessagesTotalCost       = "total_cost"
+	FieldChatMessagesRating          = "rating"
 	FieldChatMessagesCreatedAt       = "created_at"
 	FieldChatMessagesUpdatedAt       = "updated_at"
 )
@@ -569,6 +591,7 @@ func ChatMessagesFields() []string {
 		"error",
 		"first_letter_cost",
 		"total_cost",
+		"rating",
 		"created_at",
 		"updated_at",
 	}
@@ -714,6 +737,7 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 			"error",
 			"first_letter_cost",
 			"total_cost",
+			"rating",
 			"created_at",
 			"updated_at",
 		)
@@ -750,6 +774,8 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 		case "first_letter_cost":
 			selectFields = append(selectFields, f)
 		case "total_cost":
+			selectFields = append(selectFields, f)
+		case "rating":
 			selectFields = append(selectFields, f)
 		case "created_at":
 			selectFields = append(selectFields, f)
@@ -791,6 +817,8 @@ func (m *ChatMessagesModel) Get(ctx context.Context, builders ...query.SQLBuilde
 				scanFields = append(scanFields, &chatMessagesVar.FirstLetterCost)
 			case "total_cost":
 				scanFields = append(scanFields, &chatMessagesVar.TotalCost)
+			case "rating":
+				scanFields = append(scanFields, &chatMessagesVar.Rating)
 			case "created_at":
 				scanFields = append(scanFields, &chatMessagesVar.CreatedAt)
 			case "updated_at":
